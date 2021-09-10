@@ -50,10 +50,10 @@ func clearTable() {
 func TestEmptyTable(t *testing.T) {
 	clearTable()
 	req, _ := http.NewRequest("Get", "/products", nil)
-	response := executeRequest(req)
+	resp := executeRequest(req)
 
-	checkResponseCode(t, http.StatusOK, response.Code)
-	body := response.Body.String()
+	checkResponseCode(t, http.StatusOK, resp.Code)
+	body := resp.Body.String()
 	if body != "[]" {
 		t.Errorf("Expected an empty array. got %s", body)
 	}
@@ -67,7 +67,7 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 
 func checkResponseCode(t *testing.T, expected, actual int) {
 	if expected != actual {
-		t.Errorf("Expected response code %d. Got %d\n", expected, actual)
+		t.Errorf("Expected resp code %d. Got %d\n", expected, actual)
 	}
 }
 
@@ -75,13 +75,13 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 func TestGetNotExistentProduct(t *testing.T) {
 	clearTable()
 	req, _ := http.NewRequest("GET", "/product/11", nil)
-	response := executeRequest(req)
+	resp := executeRequest(req)
 
-	checkResponseCode(t, http.StatusNotFound, response.Code)
+	checkResponseCode(t, http.StatusNotFound, resp.Code)
 	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
+	json.Unmarshal(resp.Body.Bytes(), &m)
 	if m["error"] != "Product not found" {
-		t.Errorf("Expected the 'error' key of the response to be set to 'Product not found. Got %s", m["error"])
+		t.Errorf("Expected the 'error' key of the resp to be set to 'Product not found. Got %s", m["error"])
 	}
 }
 
@@ -92,10 +92,10 @@ func TestCreateProduct(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/product", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusCreated, response.Code)
+	resp := executeRequest(req)
+	checkResponseCode(t, http.StatusCreated, resp.Code)
 	var m map[string]interface{}
-	json.Unmarshal(response.Body.Bytes(), &m)
+	json.Unmarshal(resp.Body.Bytes(), &m)
 	if m["name"] != "test product" {
 		t.Errorf("Expected product name to be 'test product'. Got '%v'", m["name"])
 	}
@@ -112,8 +112,8 @@ func TestGetProduct(t *testing.T) {
 	clearTable()
 	addProduct(1)
 	req, _ := http.NewRequest("GET", "/product/1", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusOK, response.Code)
+	resp := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, resp.Code)
 }
 
 func addProduct(count int) {
@@ -125,9 +125,46 @@ func addProduct(count int) {
 	}
 }
 
-// // Update a Product
-// func TestUpdateProduct(t *testing.T) {
-// 	clearTable()
-// 	addProduct(1)
+// Update a Product
+func TestUpdateProduct(t *testing.T) {
+	clearTable()
+	addProduct(1)
+	req, _ := http.NewRequest("GET", "/product/1", nil)
+	resp := executeRequest(req)
+	var before map[string]interface{}
+	json.Unmarshal(resp.Body.Bytes(), &before)
 
-// }
+	var update = []byte(`{"name":"updated Product", "price": 11.22}`)
+	req, _ = http.NewRequest("PUT", "/product/1", bytes.NewBuffer(update))
+	req.Header.Set("Content-Type", "application/json")
+	resp = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, resp.Code)
+	var after map[string]interface{}
+	json.Unmarshal(resp.Body.Bytes(), &after)
+	if after["id"] != before["id"] {
+		t.Errorf("Excepted the id to remain the same (%v). Got %v", before["id"], after["id"])
+	}
+	if after["name"] == before["name"] {
+		t.Errorf("Excepted the name to change from '%v' to 'updated Product'. Got '%v'", before["name"], after["name"])
+	}
+	if after["price"] == before["price"] {
+		t.Errorf("Excepted the price to change from '%v' to '11.22'. Got '%v'", before["price"], after["price"])
+	}
+}
+
+func TestDeleteProduct(t *testing.T) {
+	clearTable()
+	addProduct(1)
+
+	req, _ := http.NewRequest("GET", "/product/1", nil)
+	resp := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, resp.Code)
+
+	req, _ = http.NewRequest("DELETE", "/product/1", nil)
+	resp = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, resp.Code)
+
+	req, _ = http.NewRequest("GET", "/product/1", nil)
+	resp = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, resp.Code)
+}
