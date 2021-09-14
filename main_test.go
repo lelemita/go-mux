@@ -20,11 +20,11 @@ const tableCreationQuery = `CREATE TABLE IF NOT EXISTS products (
 
 func TestMain(m *testing.M) {
 	a.Initialize(
-		os.Getenv("TEST_DB_USERNAME"),
-		os.Getenv("TEST_DB_PASSWORD"),
+		"postgres",
+		"",
 		"localhost",
 		"5432",
-		os.Getenv("TEST_DB_NAME"))
+		"postgres")
 
 	ensureTableExists()
 	code := m.Run()
