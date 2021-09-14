@@ -28,7 +28,7 @@ func main() {
 	for scanner.Scan() {
 		info = append(info, scanner.Text())
 	}
-	a.Initalize(info[0], info[1], info[2], info[3], info[4])
+	a.Initialize(info[0], info[1], info[2], info[3], info[4])
 	fmt.Printf("Listening on http://localhost%s\n", port)
 	a.Run(port)
 }

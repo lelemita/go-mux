@@ -19,18 +19,19 @@ type App struct {
 }
 
 // connect database
-func (a *App) Initalize(user, password, host, port, dbname string) {
+func (a *App) Initialize(user, password, host, port, dbname string) {
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	var err error
+	fmt.Println(connectionString)
 	a.Db, err = sql.Open("postgres", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
 	a.Router = mux.NewRouter()
-	a.InitalizeRoutes()
+	a.InitializeRoutes()
 }
 
-func (a *App) InitalizeRoutes() {
+func (a *App) InitializeRoutes() {
 	a.Router.HandleFunc("/products", a.getProducts).Methods("GET")
 	a.Router.HandleFunc("/product", a.createProduct).Methods("POST")
 	a.Router.HandleFunc("/product/{id:[0-9]+}", a.getProduct).Methods("GET")

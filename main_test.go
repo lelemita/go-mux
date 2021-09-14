@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"log"
@@ -20,20 +19,34 @@ const tableCreationQuery = `CREATE TABLE IF NOT EXISTS products (
 )`
 
 func TestMain(m *testing.M) {
-	fi, err := os.Open("dbinfo.txt")
-	HandleErr(err)
-	defer fi.Close()
-	info := []string{}
-	scanner := bufio.NewScanner(fi)
-	for scanner.Scan() {
-		info = append(info, scanner.Text())
-	}
-	a.Initalize(info[0], info[1], info[2], info[3], info[4])
+	a.Initialize(
+		os.Getenv("TEST_DB_USERNAME"),
+		os.Getenv("TEST_DB_PASSWORD"),
+		"localhost",
+		"5432",
+		os.Getenv("TEST_DB_NAME"))
+
 	ensureTableExists()
 	code := m.Run()
 	clearTable()
 	os.Exit(code)
 }
+
+// func TestMainFromTxt(m *testing.M) {
+// 	fi, err := os.Open("dbinfo.txt")
+// 	HandleErr(err)
+// 	defer fi.Close()
+// 	info := []string{}
+// 	scanner := bufio.NewScanner(fi)
+// 	for scanner.Scan() {
+// 		info = append(info, scanner.Text())
+// 	}
+// 	a.Initialize(info[0], info[1], info[2], info[3], info[4])
+// 	ensureTableExists()
+// 	code := m.Run()
+// 	clearTable()
+// 	os.Exit(code)
+// }
 
 func ensureTableExists() {
 	_, err := a.Db.Exec(tableCreationQuery)
