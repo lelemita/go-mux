@@ -21,3 +21,7 @@ blocks:
             - go get ./...
             - gotestsum --junitfile /tmp/junit.xml ./...
             - go build -v .
+      epilogue:
+        always:
+          commands:
+            - test-results publish /tmp/junit.xml
