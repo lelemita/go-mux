@@ -5,23 +5,61 @@ agent:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
-  - name: Test
+  - name: Install
     task:
       jobs:
-        - name: go test
+        - name: Download modules
           commands:
-            - sem-service start postgres
             - sem-version go 1.16
-            - export GO111MODULE=on
-            - export GOPATH=~/go
-            - 'export PATH=/home/semaphore/go/bin:$PATH'
             - checkout
-            - source env-test
-            - go get gotest.tools/gotestsum
-            - go get ./...
-            - gotestsum --junitfile /tmp/junit.xml ./...
-            - go build -v .
+            - cache restore
+            - go mod vendor
+            - cache store
       epilogue:
         always:
           commands:
             - test-results publish /tmp/junit.xml
+      env_vars:
+        - name: GO111MODULE
+          value: 'on'
+        - name: GOFLAGS
+          value: '-mod=vendor'
+  - name: Test
+    task:
+      env_vars:
+        - name: GO111MODULE
+          value: 'on'
+        - name: GOFLAGS
+          value: '-mod=vendor'
+      prologue:
+        commands:
+          - sem-version go 1.13
+          - sem-service start postgres
+          - checkout
+          - 'cache restore '
+          - go mod vendor
+          - source env-sample
+      jobs:
+        - name: go test
+          commands:
+            - go test ./...
+  - name: Build
+    task:
+      env_vars:
+        - name: GO111MODULE
+          value: 'on'
+        - name: GOFLAGS
+          value: '-mod=vendor'
+      prologue:
+        commands:
+          - sem-version go 1.13
+          - sem-service start postgres
+          - checkout
+          - 'cache restore '
+          - go mod vendor
+          - source env-sample
+      jobs:
+        - name: go build
+          commands:
+            - go build -v -o go-mux.bin
+            - artifact push project --force go-mux.bin
