@@ -57,7 +57,7 @@ blocks:
           - checkout
           - 'cache restore '
           - go mod vendor
-          - source env-sample
+          - source env-test
       jobs:
         - name: go build
           commands:
